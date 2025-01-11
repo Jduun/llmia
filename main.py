@@ -1,26 +1,16 @@
+import asyncio
 import os
 
-from dotenv import load_dotenv
-import asyncio
-import logging
 from aiogram import Bot, Dispatcher
+from dotenv import load_dotenv
 
 from handlers import router
 
 load_dotenv()
-bot: Bot = Bot(token=os.getenv("TG_TOKEN"))
+bot = Bot(token=os.getenv("TG_TOKEN"))
+print("Starting bot")
 
-logger = logging.getLogger(__name__)
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(filename)s:%(lineno)d #%(levelname)-8s "
-    "[%(asctime)s] - %(name)s - %(message)s",
-)
-
-logger.info("Starting bot")
-
-dp: Dispatcher = Dispatcher()
+dp = Dispatcher()
 dp.include_router(router)
 
 
@@ -33,4 +23,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
-        logger.info("Bot stopped")
+        print("Bot stopped")
