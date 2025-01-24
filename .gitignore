@@ -1,2 +1,5 @@
 .env
 **/__pycache__/
+.mypy_cache/
+har_and_cookies/
+chat_histories/
