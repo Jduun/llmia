@@ -17,7 +17,13 @@ Telegram bot for text RPG game with LLM and Text2Image.
 
 
 ## Technologies
-Python, Aiogram, OpenAI API, GroqAPI, LiteLLM
+
+![Python](https://img.shields.io/badge/-Python-201c24?style=for-the-badge&logo=Python&logoColor=3474a8)
+![Aiogram](https://img.shields.io/badge/-aiogram-201c24?style=for-the-badge&logo=aiogram&logoColor=3474a8)
+![OpenAI API](https://img.shields.io/badge/-openai%20api-201c24?style=for-the-badge&logo=openai&logoColor=white)
+![Groq API](https://img.shields.io/badge/-groq%20api-201c24?style=for-the-badge&logo=groq&logoColor=white)
+![LiteLLM](https://img.shields.io/badge/-litellm-201c24?style=for-the-badge&logo=litellm&logoColor=white)
+
 
 ## Installation and Setup
 1. Clone the repository:
