@@ -1,0 +1,11 @@
+services:
+  telegram-bot:
+    build:
+      context: .
+    env_file:
+      - .env
+    container_name: tg_bot
+    command: python src/main.py
+    restart: unless-stopped
+    volumes:
+      - .:/app
