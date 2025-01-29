@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from litellm import Router
 from litellm.exceptions import APIError
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 
 class DMAnswer(BaseModel):
@@ -14,10 +14,12 @@ class DMAnswer(BaseModel):
     image_prompt: str
     health: int
     inventory: list[str]
+    brief_history: str
 
 
 load_dotenv()
 groq_api_key = os.getenv("GROQ_API_KEY")
+openai_api_key = os.getenv("OPENAI_API_KEY")
 model_alias = "groq"
 model_list = [
     {
@@ -51,6 +53,7 @@ system_prompt = f"""
     "image_prompt": "image prompt",
     "health": 20,
     "inventory": ["flask", "sword"],
+    "brief_history": "Some brief description"
 }}
 
 Подробное описание полей в JSON:
@@ -71,6 +74,8 @@ system_prompt = f"""
 
 Поле inventory - список предметов, которые есть у игрока. Сначала значение [] - пустой список. Далее игрок может находить новые предметы или же тратить их.
 
+Поле brief_history - краткое описание всех важных событий игры.
+
 С первого же сообщения начинай погружать пользователя в игру.
 """
 
@@ -78,11 +83,20 @@ basic_chat_history = [
     {"role": "system", "content": system_prompt},
 ]
 
+max_chat_history_len = 10
 folder_with_chat_histories = os.getenv("CHAT_HISTORY_FOLDER")
 
 
-def get_chat_history(story_filename: str) -> list:
-    with open(story_filename, "r", encoding="utf-8") as story_file:
+def is_valid_json(json_str: str, model: type[BaseModel]) -> bool:
+    try:
+        model.model_validate_json(json_str)
+        return True
+    except ValidationError:
+        return False
+    
+
+def get_chat_history(history_filename: str) -> list:
+    with open(history_filename, "r", encoding="utf-8") as story_file:
         chat_history = json.load(story_file)
     return chat_history
 
@@ -94,18 +108,22 @@ def delete_user_chat_history(user_id: int):
         logging.getLogger(__name__).info(f"{user_chat_history_file_path} deleted")
 
 
+def chat_history_exist(user_id: int) -> bool:
+    user_chat_history_file_path = f"./{folder_with_chat_histories}/{user_id}.json"
+    return os.path.exists(user_chat_history_file_path)
+
+
 async def get_dm_response_for_user(user_id: int, message: str = None) -> DMAnswer:
     user_chat_history_file_path = f"./{folder_with_chat_histories}/{user_id}.json"
     chat_history = []
     if not os.path.exists(user_chat_history_file_path):
         logging.getLogger(__name__).info(f"{user_chat_history_file_path} doesn't exist")
-        chat_history_folder = os.getenv("CHAT_HISTORY_FOLDER")
-        if not os.path.exists(chat_history_folder):
-            os.makedirs(chat_history_folder)
+        if not os.path.exists(folder_with_chat_histories):
+            os.makedirs(folder_with_chat_histories)
         with open(
             user_chat_history_file_path, "w", encoding="utf-8"
         ) as user_chat_history_file:
-            chat_history = basic_chat_history
+            chat_history = basic_chat_history.copy()
             json.dump(
                 basic_chat_history, user_chat_history_file, ensure_ascii=False, indent=4
             )
@@ -120,15 +138,24 @@ async def get_dm_response_for_user(user_id: int, message: str = None) -> DMAnswe
             json.dump(
                 chat_history, user_chat_history_file, ensure_ascii=False, indent=4
             )
-
-    response = await router.acompletion(
-        model=model_alias,
-        messages=chat_history,
-        response_format={"type": "json_object"},
-        temperature=0.2,
-    )
-    llm_response = response.choices[0].message.content
+    valid_json = False
+    max_retries = 5
+    while not valid_json:
+        if max_retries == 0:
+            llm_response = "Something went wrong"
+            break
+        max_retries -= 1
+        response = await router.acompletion(
+            model=model_alias,
+            messages=chat_history,
+            response_format={"type": "json_object"},
+            temperature=0.2,
+        )
+        llm_response = response.choices[0].message.content
+        valid_json = is_valid_json(llm_response, DMAnswer)
     chat_history.append({"role": "assistant", "content": llm_response})
+    if len(chat_history) > max_chat_history_len:
+        del chat_history[1:3]
     with open(
         user_chat_history_file_path, "w", encoding="utf-8"
     ) as user_chat_history_file:
