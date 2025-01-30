@@ -6,12 +6,9 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram.utils.markdown import hide_link
 
-from src.dungeon_master import (
-    delete_user_chat_history,                            
-    get_dm_response_for_user,
-    chat_history_exist
-)
-from text2image import PollinationsAIGenerator, G4FImageGenerator
+from src.dungeon_master import (chat_history_exist, delete_user_chat_history,
+                                get_dm_response_for_user)
+from text2image import G4FImageGenerator, PollinationsAIGenerator
 
 router: Router = Router()
 gf4_image_generator = G4FImageGenerator()

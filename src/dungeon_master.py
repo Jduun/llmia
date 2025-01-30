@@ -93,7 +93,7 @@ def is_valid_json(json_str: str, model: type[BaseModel]) -> bool:
         return True
     except ValidationError:
         return False
-    
+
 
 def get_chat_history(history_filename: str) -> list:
     with open(history_filename, "r", encoding="utf-8") as story_file:
