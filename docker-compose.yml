@@ -2,6 +2,7 @@ services:
   telegram-bot:
     build:
       context: .
+      shm_size: "256m"
     env_file:
       - .env
     container_name: tg_bot
@@ -9,3 +10,8 @@ services:
     restart: unless-stopped
     volumes:
       - .:/app
+    deploy:
+      resources:
+        limits:
+          memory: 700M
+          cpus: "0.6"
